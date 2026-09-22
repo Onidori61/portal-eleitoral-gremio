@@ -38,6 +38,7 @@ export default async function handler(req, res) {
           endereco: text(body.endereco, 240),
           telefone: text(body.telefone, 120),
           email: text(body.email, 160),
+          credito: text(body.credito, 240),
           comissaoTitulo: text(body.comissaoTitulo, 120),
           comissaoTexto: text(body.comissaoTexto, 600),
           atualizadoEm: new Date().toISOString()

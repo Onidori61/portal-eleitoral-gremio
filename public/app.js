@@ -36,6 +36,7 @@ const renderFooter = (footer, school) => {
   $("footer-address").textContent = data.endereco || "";
   $("footer-phone").textContent = data.telefone || "";
   $("footer-email").textContent = data.email ? ` · ${data.email}` : "";
+  $("footer-credit").textContent = data.credito || "Ação da Chapa Revolução";
   $("footer-commission-title").textContent = data.comissaoTitulo || "Comissão Eleitoral";
   $("footer-commission-text").textContent = data.comissaoTexto || "";
   $("footer-school-bottom").textContent = data.titulo || school.nome;

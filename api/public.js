@@ -20,6 +20,7 @@ export default async function handler(req, res) {
         endereco: "",
         telefone: "",
         email: "",
+        credito: "Ação da Chapa Revolução",
         comissaoTitulo: "Comissão Eleitoral",
         comissaoTexto: "Consulte o edital, o estatuto e os comunicados para conhecer as regras, responsáveis e canais oficiais da eleição."
       },

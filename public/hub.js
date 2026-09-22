@@ -13,7 +13,7 @@ const formatDateTimeInput = (value) => {
 };
 const setSummary = (id, value) => { const element = $(id); if (element) element.textContent = String(value); };
 const contentRequest = (body, method = "POST") => readJson(fetch("/api/admin/content", { method, headers: authHeaders(true), body: JSON.stringify(body) }));
-const footerFields = ["titulo", "subtitulo", "descricao", "endereco", "telefone", "email", "comissaoTitulo", "comissaoTexto"];
+const footerFields = ["titulo", "subtitulo", "descricao", "endereco", "telefone", "email", "credito", "comissaoTitulo", "comissaoTexto"];
 const setFooterEditor = (footer = {}) => {
   footerFields.forEach((field) => { const element = document.querySelector(`[data-footer-field="${field}"]`); if (element) element.textContent = footer[field] || ""; });
 };
