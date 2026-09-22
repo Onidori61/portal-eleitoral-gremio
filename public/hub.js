@@ -13,6 +13,37 @@ const formatDateTimeInput = (value) => {
 };
 const setSummary = (id, value) => { const element = $(id); if (element) element.textContent = String(value); };
 const contentRequest = (body, method = "POST") => readJson(fetch("/api/admin/content", { method, headers: authHeaders(true), body: JSON.stringify(body) }));
+const toggleValue = (id) => $(id)?.getAttribute("aria-pressed") === "true";
+const setToggle = (id, active) => {
+  const element = $(id);
+  if (!element) return;
+  element.setAttribute("aria-pressed", String(active));
+  element.classList.toggle("is-active", active);
+  const label = element.querySelector("strong");
+  if (label && id === "voting-enabled") label.textContent = active ? "Votação habilitada" : "Votação desativada";
+  if (label && id === "voting-test-mode") label.textContent = active ? "Modo de teste ativado" : "Modo de teste desativado";
+};
+const upgradeCheckboxToggle = (id, icon, onText, offText) => {
+  const input = $(id);
+  if (!input || input.type !== "checkbox") return;
+  const label = input.closest("label");
+  const button = document.createElement("button");
+  button.type = "button";
+  button.id = id;
+  button.className = id === "voting-test-mode" ? "election-toggle-button test-toggle" : "election-toggle-button";
+  button.setAttribute("aria-pressed", "false");
+  button.innerHTML = `<span class="material-symbols-outlined">${icon}</span><span><strong>${offText}</strong><small>${input.parentElement.querySelector("small")?.textContent || ""}</small></span>`;
+  label.replaceWith(button);
+  button.addEventListener("click", () => setToggle(id, !toggleValue(id)));
+};
+upgradeCheckboxToggle("voting-enabled", "how_to_vote", "Votação habilitada", "Votação desativada");
+upgradeCheckboxToggle("voting-test-mode", "science", "Modo de teste ativado", "Modo de teste desativado");
+["document-published", "announcement-published"].forEach((id) => $(id)?.addEventListener("click", () => {
+  const element = $(id);
+  const active = !toggleValue(id);
+  element.setAttribute("aria-pressed", String(active));
+  element.classList.toggle("is-active", active);
+}));
 const footerFields = ["titulo", "subtitulo", "descricao", "endereco", "telefone", "email", "credito", "comissaoTitulo", "comissaoTexto"];
 const setFooterEditor = (footer = {}) => {
   footerFields.forEach((field) => { const element = document.querySelector(`[data-footer-field="${field}"]`); if (element) element.textContent = footer[field] || ""; });
@@ -20,6 +51,7 @@ const setFooterEditor = (footer = {}) => {
 const loadFooter = async () => {
   const data = await readJson(await fetch("/api/admin/content", { headers: authHeaders() }));
   setFooterEditor(data.footer || {});
+  $("footer-editor").closest(".hub-container").append($("footer-editor"));
   $("footer-editor").hidden = false;
 };
 const saveFooter = async () => {
@@ -33,8 +65,8 @@ const loadElection = async () => {
   const election = data.election;
   $("election-status").value = election.status || "configuracao";
   $("status-publico").value = election.statusPublico || "";
-  $("voting-enabled").checked = election.votingEnabled === true;
-  $("voting-test-mode").checked = election.votingTestMode === true;
+  setToggle("voting-enabled", election.votingEnabled === true);
+  setToggle("voting-test-mode", election.votingTestMode === true);
   ["inscricoesInicio", "inscricoesFim", "campanhaInicio", "campanhaFim", "votacaoInicio", "votacaoFim", "apuracao"].forEach((field) => { $(field).value = formatDateTimeInput(election.datas?.[field]); });
   message("election-message", "Configuração carregada.", "success");
 };
@@ -117,13 +149,13 @@ $("election-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const dates = {};
   ["inscricoesInicio", "inscricoesFim", "campanhaInicio", "campanhaFim", "votacaoInicio", "votacaoFim", "apuracao"].forEach((field) => { dates[field] = $(field).value ? new Date($(field).value).toISOString() : ""; });
-  try { await readJson(await fetch("/api/admin/election", { method: "PATCH", headers: authHeaders(true), body: JSON.stringify({ status: $("election-status").value, statusPublico: $("status-publico").value, votingEnabled: $("voting-enabled").checked, votingTestMode: $("voting-test-mode").checked, datas: dates }) })); message("election-message", "Controle da eleição salvo.", "success"); } catch (error) { message("election-message", error.message, "error"); }
+  try { await readJson(await fetch("/api/admin/election", { method: "PATCH", headers: authHeaders(true), body: JSON.stringify({ status: $("election-status").value, statusPublico: $("status-publico").value, votingEnabled: toggleValue("voting-enabled"), votingTestMode: toggleValue("voting-test-mode"), datas: dates }) })); message("election-message", "Controle da eleição salvo.", "success"); } catch (error) { message("election-message", error.message, "error"); }
 });
 $("document-form").addEventListener("submit", async (event) => {
   event.preventDefault();
-  try { await contentRequest({ tipo: "documento", titulo: $("document-title").value, categoria: $("document-category").value, arquivo: $("document-url").value, publicado: $("document-published").checked }); event.target.reset(); $("document-published").checked = true; message("document-message", "Documento salvo.", "success"); await loadContent(); } catch (error) { message("document-message", error.message, "error"); }
+  try { await contentRequest({ tipo: "documento", titulo: $("document-title").value, categoria: $("document-category").value, arquivo: $("document-url").value, publicado: toggleValue("document-published") }); event.target.reset(); setToggle("document-published", true); message("document-message", "Documento salvo.", "success"); await loadContent(); } catch (error) { message("document-message", error.message, "error"); }
 });
 $("announcement-form").addEventListener("submit", async (event) => {
   event.preventDefault();
-  try { await contentRequest({ tipo: "comunicado", titulo: $("announcement-title").value, texto: $("announcement-text").value, publicado: $("announcement-published").checked }); event.target.reset(); $("announcement-published").checked = true; message("announcement-message", "Comunicado salvo.", "success"); await loadContent(); } catch (error) { message("announcement-message", error.message, "error"); }
+  try { await contentRequest({ tipo: "comunicado", titulo: $("announcement-title").value, texto: $("announcement-text").value, publicado: toggleValue("announcement-published") }); event.target.reset(); setToggle("announcement-published", true); message("announcement-message", "Comunicado salvo.", "success"); await loadContent(); } catch (error) { message("announcement-message", error.message, "error"); }
 });
