@@ -2,7 +2,7 @@ import { getDb } from "../_lib/firebase.js";
 import { json, method, requireCommission } from "../_lib/http.js";
 
 export default async function handler(req, res) {
-  if (!["GET", "PATCH"].includes(req.method)) {
+  if (!["GET", "PATCH", "DELETE"].includes(req.method)) {
     return json(res, 405, { error: "Método não permitido." });
   }
   if (!requireCommission(req, res)) return;
@@ -13,6 +13,13 @@ export default async function handler(req, res) {
       return json(res, 200, { slates: snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) });
     }
     const id = String(req.body?.id || "");
+    if (req.method === "DELETE") {
+      if (!id) return json(res, 400, { error: "Informe a chapa que será apagada." });
+      const slate = await db.collection("slates").doc(id).get();
+      if (!slate.exists) return json(res, 404, { error: "Chapa não encontrada." });
+      await db.collection("slates").doc(id).delete();
+      return json(res, 200, { deleted: true });
+    }
     const status = String(req.body?.status || "");
     if (!id || !["habilitada", "indeferida", "pendente"].includes(status)) return json(res, 400, { error: "Chapa ou status inválido." });
     const data = { status, updatedAt: new Date().toISOString() };
