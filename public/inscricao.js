@@ -73,5 +73,6 @@ $("registration-form").addEventListener("submit", async (event) => {
     message.textContent = `Inscrição enviada para análise. Protocolo: ${body.id}`;
     message.className = "form-message success";
     event.target.reset();
+    window.setTimeout(() => { window.location.href = "/#inicio"; }, 1400);
   } catch (error) { message.textContent = error.message; message.className = "form-message error"; }
 });
