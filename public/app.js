@@ -18,7 +18,8 @@ const renderSlates = (slates) => {
 };
 const renderRules = (texts) => [texts.eleicao.quemPodeVotar, texts.eleicao.quemPodeSerCandidato, texts.eleicao.comoVotar, texts.eleicao.comoRaEUsado, texts.eleicao.apuracao].map((text, index) => `<article class="rule-card"><span class="rule-index">0${index + 1}</span><h3>${["Quem pode votar", "Quem pode ser candidato", "Como é o voto", "Como o RA é usado", "Apuração"][index]}</h3><p>${escapeHtml(text)}</p></article>`).join("");
 const renderCalendar = (dates) => Object.entries(dates).map(([key, value]) => `<article class="timeline-item ${value ? "is-defined" : ""}"><time>${escapeHtml(formatDate(value))}</time><strong>${escapeHtml(dateKey(key))}</strong><span>${value ? "Data oficial cadastrada" : "Data a definir pela Comissão"}</span></article>`).join("");
-const renderDocuments = (documents) => documents.length ? documents.map((doc) => `<a class="document-item" href="${escapeHtml(doc.arquivo)}" target="_blank" rel="noreferrer"><strong>${escapeHtml(doc.titulo)}</strong><span>${escapeHtml(doc.categoria || "Abrir")} ↗</span></a>`).join("") : '<p class="empty-state">Nenhum documento publicado ainda.</p>';
+const statuteUrl = "https://docs.google.com/document/d/154zRk2niV64O-Lacm4dVLfmr7R5ySSsX/edit?usp=sharing&ouid=114036570556280466312&rtpof=true&sd=true";
+const renderDocuments = (documents) => [`<a class="document-item document-item-featured" href="${statuteUrl}" target="_blank" rel="noopener noreferrer"><span class="document-icon material-symbols-outlined">picture_as_pdf</span><strong>Estatuto completo do Grêmio</strong><span>Consultar ↗</span></a>`, ...(documents || []).map((doc) => `<a class="document-item" href="${escapeHtml(doc.arquivo)}" target="_blank" rel="noopener noreferrer"><span class="document-icon material-symbols-outlined">picture_as_pdf</span><strong>${escapeHtml(doc.titulo)}</strong><span>${escapeHtml(doc.categoria || "Abrir")} ↗</span></a>`)].join("");
 const renderAnnouncements = (items) => items.length ? items.map((item) => `<article class="announcement-card"><h3>${escapeHtml(item.titulo)}</h3><p>${escapeHtml(item.texto)}</p></article>`).join("") : '<p class="empty-state">Nenhum comunicado publicado.</p>';
 const renderBallot = (slates) => {
   const choices = slates.map((slate) => `<label><input type="radio" name="choice" value="${escapeHtml(String(slate.id))}" required><span>Chapa ${escapeHtml(String(slate.numero))} — ${escapeHtml(slate.nome)}</span></label>`);
@@ -37,6 +38,8 @@ const render = (data) => {
   $("school-type").textContent = school.tipo || "Informação oficial da escola";
   $("brand-school").textContent = school.nome;
   $("footer-school").textContent = school.nome;
+  if ($("footer-school-full")) $("footer-school-full").textContent = school.nome;
+  if ($("footer-school-bottom")) $("footer-school-bottom").textContent = school.nome;
   $("footer-year").textContent = election.ano;
   $("election-year").textContent = election.ano;
   $("title").textContent = texts.inicio.titulo;
