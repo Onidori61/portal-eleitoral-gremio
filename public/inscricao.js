@@ -3,9 +3,10 @@ const members = [];
 const proposals = [];
 const socials = [];
 let cargos = [];
+let turmas = [];
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
 const renderMembers = () => {
-  $("members").innerHTML = members.map((member, index) => `<div class="member-card"><div class="member-role">${String(index + 1).padStart(2, "0")} · ${escapeHtml(member.cargo)}</div><div class="repeatable-fields"><label>Nome completo<input data-member-name="${index}" value="${escapeHtml(member.nome)}" maxlength="120" required placeholder="Nome do integrante"></label><label>Turma / série<input data-member-class="${index}" value="${escapeHtml(member.turma)}" maxlength="40" required placeholder="Ex.: 2º A"></label><label>Apresentação (opcional)<input data-member-bio="${index}" value="${escapeHtml(member.apresentacao)}" maxlength="300" placeholder="Breve apresentação"></label></div></div>`).join("");
+  $("members").innerHTML = members.map((member, index) => `<div class="member-card"><div class="member-role">${String(index + 1).padStart(2, "0")} · ${escapeHtml(member.cargo)}</div><div class="repeatable-fields"><label>Nome completo<input data-member-name="${index}" value="${escapeHtml(member.nome)}" maxlength="120" required placeholder="Nome do integrante"></label><label>Turma / série<select data-member-class="${index}" required><option value="">Escolha a turma</option>${turmas.map((turma) => `<option value="${escapeHtml(turma)}" ${turma === member.turma ? "selected" : ""}>${escapeHtml(turma)}</option>`).join("")}</select></label><label>Apresentação (opcional)<input data-member-bio="${index}" value="${escapeHtml(member.apresentacao)}" maxlength="300" placeholder="Breve apresentação"></label></div></div>`).join("");
 };
 const renderProposals = () => {
   $("proposals").innerHTML = proposals.map((proposal, index) => `<div class="repeatable-row"><div class="repeatable-fields"><label>Título<input data-proposal-title="${index}" value="${escapeHtml(proposal.titulo)}" maxlength="120" required></label><label>Categoria<input data-proposal-category="${index}" value="${escapeHtml(proposal.categoria)}" maxlength="60" placeholder="Ex.: Cultura, esporte, convivência"></label><label>Descrição<textarea data-proposal-description="${index}" rows="2" maxlength="500" required>${escapeHtml(proposal.descricao)}</textarea></label></div><button class="remove-button" type="button" data-remove-proposal="${index}" aria-label="Remover proposta">×</button></div>`).join("");
@@ -34,6 +35,7 @@ const initialize = async () => {
     const response = await fetch("/api/public");
     const data = await response.json();
     cargos = data.content?.cargos || [];
+    turmas = data.content?.turmas || [];
   } catch {
     $("registration-message").textContent = "Não foi possível carregar os cargos configurados.";
     $("registration-message").className = "form-message error";
@@ -52,10 +54,17 @@ $("registration-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   sync();
   const message = $("registration-message");
-  if (members.some((member) => !member.nome || !member.turma) || !proposals.length) { message.textContent = "Preencha os oito integrantes e adicione pelo menos uma proposta."; message.className = "form-message error"; return; }
+  const proposalFields = [...document.querySelectorAll("[data-proposal-title]")];
+  const descriptionFields = [...document.querySelectorAll("[data-proposal-description]")];
+  if (members.some((member) => !member.nome || !member.turma) || proposalFields.length === 0 || proposalFields.some((field, index) => !field.value.trim() || !descriptionFields[index]?.value.trim())) {
+    message.textContent = "Preencha os oito integrantes e pelo menos uma proposta com título e descrição.";
+    message.className = "form-message error";
+    return;
+  }
+  const formData = new FormData(event.currentTarget);
   message.textContent = "Enviando inscrição...";
   try {
-    const response = await fetch("/api/inscriptions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ nome: $("name").value, apresentacao: $("presentation").value, integrantes: members, propostas, redes: socials }) });
+    const response = await fetch("/api/inscriptions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ nome: formData.get("name"), apresentacao: formData.get("presentation"), integrantes: members, propostas: proposals, redes: socials }) });
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || "Não foi possível enviar a inscrição.");
     message.textContent = `Inscrição enviada para análise. Protocolo: ${body.id}`;

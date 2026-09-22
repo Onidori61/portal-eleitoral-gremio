@@ -4,14 +4,14 @@ const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&"
 const message = (id, text, type = "") => { const element = $(id); element.textContent = text; element.className = "form-message " + type; };
 const readJson = async (response) => { const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || "Falha na operação."); return data; };
 const formatDateTime = (value) => value ? new Date(value).toISOString().slice(0, 16) : "";
+const contentRequest = (body, method = "POST") => readJson(fetch("/api/admin/content", { method, headers: authHeaders(true), body: JSON.stringify(body) }));
 
 const loadElection = async () => {
   const data = await readJson(await fetch("/api/admin/election", { headers: authHeaders() }));
   const election = data.election;
   $("election-status").value = election.status || "configuracao";
   $("status-publico").value = election.statusPublico || "";
-  $("votacao-inicio").value = formatDateTime(election.datas?.votacaoInicio);
-  $("votacao-fim").value = formatDateTime(election.datas?.votacaoFim);
+  ["inscricoesInicio", "inscricoesFim", "campanhaInicio", "campanhaFim", "votacaoInicio", "votacaoFim", "apuracao"].forEach((field) => { $(field).value = formatDateTime(election.datas?.[field]); });
   message("election-message", "Configuração carregada.", "success");
 };
 
@@ -30,13 +30,23 @@ const updateSlate = async (id, status) => {
   catch (error) { const target = document.querySelector(`[data-slate-message="${id}"]`); target.textContent = error.message; target.className = "form-message error"; }
 };
 
+const loadContent = async () => {
+  const data = await readJson(await fetch("/api/admin/content", { headers: authHeaders() }));
+  $("documents-admin").innerHTML = data.documents.map((item) => `<p class="admin-content-row"><strong>${escapeHtml(item.titulo)}</strong><small>${item.publicado ? "Publicado" : "Rascunho"}</small><button type="button" data-delete-content="documento" data-content-id="${escapeHtml(item.id)}">Excluir</button></p>`).join("") || '<p class="muted">Nenhum documento cadastrado.</p>';
+  $("announcements-admin").innerHTML = data.announcements.map((item) => `<p class="admin-content-row"><strong>${escapeHtml(item.titulo)}</strong><small>${item.publicado ? "Publicado" : "Rascunho"}</small><button type="button" data-delete-content="comunicado" data-content-id="${escapeHtml(item.id)}">Excluir</button></p>`).join("") || '<p class="muted">Nenhum comunicado cadastrado.</p>';
+  document.querySelectorAll("[data-delete-content]").forEach((button) => button.addEventListener("click", async () => {
+    if (!window.confirm("Excluir este item?")) return;
+    try { await contentRequest({ tipo: button.dataset.deleteContent, id: button.dataset.contentId }, "DELETE"); await loadContent(); } catch (error) { window.alert(error.message); }
+  }));
+};
+
 const readImage = (file) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result).split(",")[1]); reader.onerror = () => reject(new Error("Não foi possível ler a imagem.")); reader.readAsDataURL(file); });
 const uploadImage = async (file) => {
   if (!file || file.size > 4 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new Error("Use JPG, PNG ou WEBP de até 4 MB.");
   return readJson(await fetch("/api/upload", { method: "POST", headers: authHeaders(true), body: JSON.stringify({ image: await readImage(file), name: file.name }) }));
 };
 
-$("token").addEventListener("input", () => { $("token-state").textContent = $("token").value ? "Token preenchido" : "Aguardando autenticação"; });
+$("token").addEventListener("input", () => { $("token-state").textContent = $("token").value ? "Token preenchido" : "Aguardando autenticação"; if ($("token").value.length > 10) loadContent().catch(() => {}); });
 $("csv").addEventListener("change", (event) => { $("csv-label").textContent = event.target.files[0]?.name || "Escolher arquivo CSV"; });
 $("image").addEventListener("change", (event) => { $("image-label").textContent = event.target.files[0]?.name || "Escolher imagem"; });
 $("import").addEventListener("click", async () => {
@@ -55,4 +65,18 @@ $("upload").addEventListener("click", async () => {
 });
 $("load-election").addEventListener("click", async () => { try { await loadElection(); } catch (error) { message("election-message", error.message, "error"); } });
 $("load-slates").addEventListener("click", async () => { try { await loadSlates(); } catch (error) { $("pending-slates").innerHTML = `<p class="form-message error">${escapeHtml(error.message)}</p>`; } });
-$("election-form").addEventListener("submit", async (event) => { event.preventDefault(); try { await readJson(await fetch("/api/admin/election", { method: "PATCH", headers: authHeaders(true), body: JSON.stringify({ status: $("election-status").value, statusPublico: $("status-publico").value, datas: { votacaoInicio: $("votacao-inicio").value ? new Date($("votacao-inicio").value).toISOString() : "", votacaoFim: $("votacao-fim").value ? new Date($("votacao-fim").value).toISOString() : "" } }) })); message("election-message", "Controle da eleição salvo.", "success"); } catch (error) { message("election-message", error.message, "error"); } });
+$("election-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const dates = {};
+  ["inscricoesInicio", "inscricoesFim", "campanhaInicio", "campanhaFim", "votacaoInicio", "votacaoFim", "apuracao"].forEach((field) => { dates[field] = $(field).value ? new Date($(field).value).toISOString() : ""; });
+  try { await readJson(await fetch("/api/admin/election", { method: "PATCH", headers: authHeaders(true), body: JSON.stringify({ status: $("election-status").value, statusPublico: $("status-publico").value, datas: dates }) })); message("election-message", "Controle da eleição salvo.", "success"); } catch (error) { message("election-message", error.message, "error"); }
+});
+$("document-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try { await contentRequest({ tipo: "documento", titulo: $("document-title").value, categoria: $("document-category").value, arquivo: $("document-url").value, publicado: $("document-published").checked }); event.target.reset(); $("document-published").checked = true; message("document-message", "Documento salvo.", "success"); await loadContent(); } catch (error) { message("document-message", error.message, "error"); }
+});
+$("announcement-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try { await contentRequest({ tipo: "comunicado", titulo: $("announcement-title").value, texto: $("announcement-text").value, publicado: $("announcement-published").checked }); event.target.reset(); $("announcement-published").checked = true; message("announcement-message", "Comunicado salvo.", "success"); await loadContent(); } catch (error) { message("announcement-message", error.message, "error"); }
+});
+loadContent().catch(() => {});

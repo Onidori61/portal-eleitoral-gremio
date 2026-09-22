@@ -59,7 +59,16 @@ No mesmo Hub, a Comissão pode carregar e salvar a configuração da eleição:
 - `configuração`, `inscrições abertas`, `campanha`, `votação aberta`,
   `apuração` ou `encerrada`;
 - status público exibido no portal;
-- início e fim da votação.
+- início e fim das inscrições;
+- início e fim da campanha;
+- início e fim da votação;
+- data da apuração.
+
+Também é possível publicar documentos e comunicados diretamente no Hub. Para um
+documento, use um link público para o arquivo e marque a opção de publicação.
+Para trocar o logo, substitua `public/imagens/logo-gremio.png` por uma imagem
+aprovada, mantendo esse nome. As turmas disponíveis na inscrição ficam em
+`config/turmas.js`.
 
 Para abrir a votação, o sistema exige as duas datas. Para editar uma chapa,
 carregue a lista, altere nome/apresentação/número e salve; a mudança é persistida

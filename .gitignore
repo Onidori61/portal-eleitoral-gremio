@@ -4,3 +4,5 @@ node_modules/
 data/eleitores.local.csv
 data/*.local.*
 .vercel/
+.vercel
+.env*.local
