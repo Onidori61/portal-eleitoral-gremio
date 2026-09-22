@@ -1,0 +1,6 @@
+node_modules/
+.env
+.env.local
+data/eleitores.local.csv
+data/*.local.*
+.vercel/

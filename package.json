@@ -1,0 +1,16 @@
+{
+  "name": "portal-eleitoral-gremio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "validate": "node scripts/validar-config.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.5.0"
+  },
+  "devDependencies": {
+    "vercel": "^48.10.0"
+  }
+}

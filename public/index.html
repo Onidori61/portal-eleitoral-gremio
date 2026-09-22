@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Portal Eleitoral do Grêmio Estudantil">
+  <title>Portal Eleitoral</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">Grêmio Estudantil</a>
+    <nav aria-label="Navegação principal">
+      <a href="/">Início</a><a href="#chapas">Chapas</a><a href="#como-funciona">Como funciona</a>
+      <a href="#calendario">Calendário</a><a href="#documentos">Documentos</a><a href="#comunicados">Comunicados</a>
+      <a class="button small" href="#votar">Votar</a>
+    </nav>
+  </header>
+  <main id="app">
+    <section class="hero"><p class="eyebrow" id="school"></p><h1 id="title"></h1><p id="subtitle"></p><a class="button" href="#chapas">Conhecer as chapas</a></section>
+    <section class="section"><h2>Sobre a eleição</h2><p id="about"></p><div class="status" id="status">Carregando status...</div></section>
+    <section class="section" id="chapas"><h2 id="chapas-title"></h2><p id="chapas-description"></p><div class="cards" id="slates"></div></section>
+    <section class="section" id="como-funciona"><h2>Como funciona</h2><div id="rules" class="prose"></div></section>
+    <section class="section" id="calendario"><h2>Calendário oficial</h2><div id="calendar" class="timeline"></div></section>
+    <section class="section" id="documentos"><h2>Documentos</h2><div id="documents" class="cards"></div></section>
+    <section class="section" id="comunicados"><h2>Comunicados</h2><div id="announcements"></div></section>
+    <section class="section voting" id="votar"><h2>Votação</h2><p id="vote-help">A votação só fica disponível durante a janela oficial.</p><form id="vote-form" hidden><label for="ra">RA</label><input id="ra" inputmode="numeric" autocomplete="off" required pattern="[0-9]{1,20}"><div id="ballot"></div><button class="button" type="submit">Registrar voto</button></form><p id="vote-message" role="status"></p></section>
+  </main>
+  <footer><span id="footer-school"></span><span>Portal subordinado ao edital, regimento e decisões da Comissão Eleitoral.</span></footer>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
