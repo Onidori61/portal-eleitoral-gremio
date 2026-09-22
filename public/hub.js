@@ -38,6 +38,7 @@ const upgradeCheckboxToggle = (id, icon, onText, offText) => {
 };
 upgradeCheckboxToggle("voting-enabled", "how_to_vote", "Votação habilitada", "Votação desativada");
 upgradeCheckboxToggle("voting-test-mode", "science", "Modo de teste ativado", "Modo de teste desativado");
+["voting-enabled", "voting-test-mode"].forEach((id) => $(id)?.addEventListener("click", () => setToggle(id, !toggleValue(id))));
 ["document-published", "announcement-published"].forEach((id) => $(id)?.addEventListener("click", () => {
   const element = $(id);
   const active = !toggleValue(id);
