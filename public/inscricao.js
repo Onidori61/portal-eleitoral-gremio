@@ -9,7 +9,7 @@ const renderMembers = () => {
   $("members").innerHTML = members.map((member, index) => `<div class="member-card"><div class="member-role">${String(index + 1).padStart(2, "0")} · ${escapeHtml(member.cargo)}</div><div class="repeatable-fields"><label>Nome completo<input data-member-name="${index}" value="${escapeHtml(member.nome)}" maxlength="120" required placeholder="Nome do integrante"></label><label>Turma / série<select data-member-class="${index}" required><option value="">Escolha a turma</option>${turmas.map((turma) => `<option value="${escapeHtml(turma)}" ${turma === member.turma ? "selected" : ""}>${escapeHtml(turma)}</option>`).join("")}</select></label><label>Apresentação (opcional)<input data-member-bio="${index}" value="${escapeHtml(member.apresentacao)}" maxlength="300" placeholder="Breve apresentação"></label></div></div>`).join("");
 };
 const renderProposals = () => {
-  $("proposals").innerHTML = proposals.map((proposal, index) => `<div class="repeatable-row"><div class="repeatable-fields"><label>Título<input data-proposal-title="${index}" value="${escapeHtml(proposal.titulo)}" maxlength="120" required></label><label>Categoria<input data-proposal-category="${index}" value="${escapeHtml(proposal.categoria)}" maxlength="60" placeholder="Ex.: Cultura, esporte, convivência"></label><label>Descrição<textarea data-proposal-description="${index}" rows="2" maxlength="500" required>${escapeHtml(proposal.descricao)}</textarea></label></div><button class="remove-button" type="button" data-remove-proposal="${index}" aria-label="Remover proposta">×</button></div>`).join("");
+  $("proposals").innerHTML = proposals.map((proposal, index) => `<div class="repeatable-row"><div class="repeatable-fields"><label>Título<input data-proposal-title="${index}" value="${escapeHtml(proposal.titulo)}" maxlength="120" required></label><label>Descrição<textarea data-proposal-description="${index}" rows="3" maxlength="500" required>${escapeHtml(proposal.descricao)}</textarea></label></div><button class="remove-button" type="button" data-remove-proposal="${index}" aria-label="Remover proposta">×</button></div>`).join("");
   document.querySelectorAll("[data-remove-proposal]").forEach((button) => button.addEventListener("click", () => { sync(); proposals.splice(Number(button.dataset.removeProposal), 1); renderProposals(); }));
 };
 const renderSocials = () => {
@@ -21,13 +21,13 @@ const sync = () => {
   document.querySelectorAll("[data-member-class]").forEach((input) => { members[Number(input.dataset.memberClass)].turma = input.value; });
   document.querySelectorAll("[data-member-bio]").forEach((input) => { members[Number(input.dataset.memberBio)].apresentacao = input.value; });
   document.querySelectorAll("[data-proposal-title]").forEach((input) => { proposals[Number(input.dataset.proposalTitle)].titulo = input.value; });
-  document.querySelectorAll("[data-proposal-category]").forEach((input) => { proposals[Number(input.dataset.proposalCategory)].categoria = input.value; });
   document.querySelectorAll("[data-proposal-description]").forEach((input) => { proposals[Number(input.dataset.proposalDescription)].descricao = input.value; });
   document.querySelectorAll("[data-social-platform]").forEach((input) => { socials[Number(input.dataset.socialPlatform)].plataforma = input.value; });
   document.querySelectorAll("[data-social-url]").forEach((input) => { socials[Number(input.dataset.socialUrl)].url = input.value; });
 };
-const addProposal = () => { sync(); proposals.push({ titulo: "", categoria: "", descricao: "" }); renderProposals(); };
+const addProposal = () => { sync(); proposals.push({ titulo: "", descricao: "" }); renderProposals(); };
 const addSocial = () => { sync(); socials.push({ plataforma: "", url: "" }); renderSocials(); };
+const readImage = (file) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result).split(",")[1]); reader.onerror = () => reject(new Error("Não foi possível ler a imagem.")); reader.readAsDataURL(file); });
 $("add-proposal").addEventListener("click", addProposal);
 $("add-social").addEventListener("click", addSocial);
 const initialize = async () => {
@@ -64,7 +64,10 @@ $("registration-form").addEventListener("submit", async (event) => {
   const formData = new FormData(event.currentTarget);
   message.textContent = "Enviando inscrição...";
   try {
-    const response = await fetch("/api/inscriptions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ nome: formData.get("name"), apresentacao: formData.get("presentation"), integrantes: members, propostas: proposals, redes: socials }) });
+    const file = $("image-file").files[0];
+    if (file && (file.size > 4 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp"].includes(file.type))) throw new Error("A imagem deve ser JPG, PNG ou WEBP e ter até 4 MB.");
+    const imagem = file ? { data: await readImage(file), tipo: file.type, nome: file.name } : null;
+    const response = await fetch("/api/inscriptions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ nome: formData.get("name"), apresentacao: formData.get("presentation"), integrantes: members, propostas: proposals, redes: socials, imagem }) });
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || "Não foi possível enviar a inscrição.");
     message.textContent = `Inscrição enviada para análise. Protocolo: ${body.id}`;

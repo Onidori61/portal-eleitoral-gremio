@@ -59,6 +59,14 @@ A Comissão acessa `/hub.html`, informa o `COMMISSION_API_TOKEN`, abre
 atribui o número e escolhe **Habilitar** ou **Indeferir**. Somente chapas
 habilitadas aparecem no portal público.
 
+Os cartões públicos exibem apenas o resumo da chapa. O link **Ver informações
+completas** abre `/chapa.html?id=...` (ou a rota amigável `/chapa?id=...`) com
+integrantes, cargos, propostas, apresentação e redes sociais da chapa
+habilitada. A imagem é opcional na inscrição; quando enviada, o backend faz o
+upload para o ImgBB e grava somente a URL pública aprovada.
+
+As propostas são livres e possuem apenas título e descrição, sem categoria.
+
 No mesmo Hub, a Comissão pode carregar e salvar a configuração da eleição:
 
 - `configuração`, `inscrições abertas`, `campanha`, `votação aberta`,

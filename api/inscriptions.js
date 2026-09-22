@@ -1,6 +1,7 @@
 import { getDb } from "./_lib/firebase.js";
 import { json, method } from "./_lib/http.js";
 import cargos from "../config/cargos.js";
+import { uploadToImgBB } from "./_lib/imgbb.js";
 
 const cleanText = (value, max) => String(value || "").trim().slice(0, max);
 const validProposals = (proposals) => Array.isArray(proposals) && proposals.length > 0 && proposals.every((proposal) => cleanText(proposal.titulo, 120) && cleanText(proposal.descricao, 500));
@@ -17,13 +18,21 @@ export default async function handler(req, res) {
   }
   try {
     const db = getDb();
+    let imagemUrl = "";
+    if (body.imagem?.data) {
+      if (!/^image\/(jpeg|png|webp)$/i.test(String(body.imagem.tipo || "")) || String(body.imagem.data).length > 6_000_000) {
+        return json(res, 400, { error: "A imagem deve ser JPG, PNG ou WEBP e ter até 4 MB." });
+      }
+      imagemUrl = (await uploadToImgBB({ image: String(body.imagem.data), name: cleanText(body.imagem.nome, 120) })).url;
+    }
     const record = await db.collection("slates").add({
       nome,
       apresentacao,
       integrantes: body.integrantes.map((member) => ({ nome: cleanText(member.nome, 120), cargo: cleanText(member.cargo, 100), turma: cleanText(member.turma, 40), apresentacao: cleanText(member.apresentacao, 300) })),
-      propostas: body.propostas.map((proposal) => ({ titulo: cleanText(proposal.titulo, 120), categoria: cleanText(proposal.categoria, 60), descricao: cleanText(proposal.descricao, 500) })),
+      propostas: body.propostas.map((proposal) => ({ titulo: cleanText(proposal.titulo, 120), descricao: cleanText(proposal.descricao, 500) })),
       redes: (body.redes || []).map((social) => ({ plataforma: cleanText(social.plataforma, 40), url: String(social.url).trim() })),
-      imagemStatus: "pendente",
+      imagemUrl,
+      imagemStatus: imagemUrl ? "enviada" : "pendente",
       status: "pendente",
       createdAt: new Date().toISOString()
     });
