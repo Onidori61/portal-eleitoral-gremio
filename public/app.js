@@ -76,7 +76,7 @@ const render = (data) => {
   const start = Date.parse(election.datas?.votacaoInicio || ""), end = Date.parse(election.datas?.votacaoFim || ""), withinWindow = Number.isFinite(start) && Number.isFinite(end) && Date.now() >= start && Date.now() <= end;
   const votingOpen = election.status === "votacao" && election.votingEnabled === true && (election.votingTestMode === true || withinWindow);
   const votingEnded = election.datas?.votacaoFim && Date.now() > Date.parse(election.datas.votacaoFim);
-  $("vote-panel").classList.toggle("vote-panel-locked", !votingOpen);
+  $("votar").classList.toggle("official-vote-locked", !votingOpen);
   $("vote-form").hidden = !votingOpen;
   $("vote-locked-message").hidden = votingOpen;
   $("vote-locked-message").textContent = votingEnded || election.status === "encerrada" ? "A votação foi encerrada. Consulte o calendário e os comunicados para acompanhar a apuração." : "A votação não está aberta. Consulte o calendário para saber quando ela estará disponível.";
@@ -103,8 +103,10 @@ $("vote-form").addEventListener("submit", async (event) => {
     event.target.reset();
   } catch (error) { message.textContent = error.message; }
 });
-$("vote-panel").addEventListener("click", (event) => {
-  if (!$("vote-panel").classList.contains("vote-panel-locked") || event.target.closest("a")) return;
+$("votar").addEventListener("click", (event) => {
+  if (!$("votar").classList.contains("official-vote-locked")) return;
+  event.preventDefault();
+  event.stopPropagation();
   const notice = document.createElement("div");
   notice.className = "vote-click-notice";
   notice.textContent = "A votação ainda não está disponível. Verifique o calendário.";
