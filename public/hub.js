@@ -4,6 +4,7 @@ const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&"
 const message = (id, text, type = "") => { const element = $(id); element.textContent = text; element.className = "form-message " + type; };
 const readJson = async (response) => { const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || "Falha na operação."); return data; };
 const formatDateTime = (value) => value ? new Date(value).toISOString().slice(0, 16) : "";
+const setSummary = (id, value) => { const element = $(id); if (element) element.textContent = String(value); };
 const contentRequest = (body, method = "POST") => readJson(fetch("/api/admin/content", { method, headers: authHeaders(true), body: JSON.stringify(body) }));
 
 const loadElection = async () => {
@@ -17,6 +18,8 @@ const loadElection = async () => {
 
 const loadSlates = async () => {
   const data = await readJson(await fetch("/api/admin/slates", { headers: authHeaders() }));
+  setSummary("summary-slates", data.slates.length);
+  setSummary("summary-approved", data.slates.filter((slate) => slate.status === "habilitada").length);
   $("pending-slates").innerHTML = data.slates.length ? data.slates.map((slate) => `<article class="pending-slate"><div class="pending-slate-content"><span class="slate-number">${escapeHtml(slate.status)} · ${escapeHtml(slate.id)}</span><label>Nome da chapa<input data-name="${escapeHtml(slate.id)}" value="${escapeHtml(slate.nome || "")}" maxlength="100"></label><label>Apresentação<textarea data-presentation="${escapeHtml(slate.id)}" rows="3" maxlength="1000">${escapeHtml(slate.apresentacao || "")}</textarea></label><details><summary>Ver composição e propostas</summary><p><strong>Integrantes:</strong> ${(slate.integrantes || []).map((member) => `${escapeHtml(member.nome)} — ${escapeHtml(member.cargo)} (${escapeHtml(member.turma)})`).join("; ")}</p><p><strong>Propostas:</strong> ${(slate.propostas || []).map((proposal) => `${escapeHtml(proposal.titulo)}: ${escapeHtml(proposal.descricao)}`).join("; ")}</p></details></div><div class="review-actions"><label>Número<input data-number="${escapeHtml(slate.id)}" type="number" min="1" value="${escapeHtml(slate.numero || "")}"></label><button class="button button-primary" data-save="${escapeHtml(slate.id)}" type="button">Salvar edição</button>${slate.status === "pendente" ? `<button class="button button-primary" data-approve="${escapeHtml(slate.id)}" type="button">Habilitar</button><button class="button danger-button" data-reject="${escapeHtml(slate.id)}" type="button">Indeferir</button>` : `<button class="button danger-button" data-pend="${escapeHtml(slate.id)}" type="button">Voltar para pendente</button>`}<p class="form-message" data-slate-message="${escapeHtml(slate.id)}" role="status"></p></div></article>`).join("") : '<p class="empty-state">Nenhuma chapa cadastrada.</p>';
   document.querySelectorAll("[data-save]").forEach((button) => button.addEventListener("click", () => updateSlate(button.dataset.save, "editar")));
   document.querySelectorAll("[data-approve]").forEach((button) => button.addEventListener("click", () => updateSlate(button.dataset.approve, "habilitada")));
@@ -34,10 +37,29 @@ const loadContent = async () => {
   const data = await readJson(await fetch("/api/admin/content", { headers: authHeaders() }));
   $("documents-admin").innerHTML = data.documents.map((item) => `<p class="admin-content-row"><strong>${escapeHtml(item.titulo)}</strong><small>${item.publicado ? "Publicado" : "Rascunho"}</small><button type="button" data-delete-content="documento" data-content-id="${escapeHtml(item.id)}">Excluir</button></p>`).join("") || '<p class="muted">Nenhum documento cadastrado.</p>';
   $("announcements-admin").innerHTML = data.announcements.map((item) => `<p class="admin-content-row"><strong>${escapeHtml(item.titulo)}</strong><small>${item.publicado ? "Publicado" : "Rascunho"}</small><button type="button" data-delete-content="comunicado" data-content-id="${escapeHtml(item.id)}">Excluir</button></p>`).join("") || '<p class="muted">Nenhum comunicado cadastrado.</p>';
+  setSummary("summary-documents", data.documents.filter((item) => item.publicado).length);
+  setSummary("summary-announcements", data.announcements.filter((item) => item.publicado).length);
   document.querySelectorAll("[data-delete-content]").forEach((button) => button.addEventListener("click", async () => {
     if (!window.confirm("Excluir este item?")) return;
     try { await contentRequest({ tipo: button.dataset.deleteContent, id: button.dataset.contentId }, "DELETE"); await loadContent(); } catch (error) { window.alert(error.message); }
   }));
+};
+
+const authenticate = async () => {
+  if ($("token").value.length < 10) {
+    $("token-state").textContent = "Cole um token válido para continuar.";
+    $("token-state").classList.remove("ready");
+    return;
+  }
+  $("token-state").textContent = "Carregando dados...";
+  try {
+    await Promise.all([loadElection(), loadSlates(), loadContent()]);
+    $("token-state").textContent = "Acesso confirmado nesta sessão.";
+    $("token-state").classList.add("ready");
+  } catch (error) {
+    $("token-state").textContent = error.message;
+    $("token-state").classList.remove("ready");
+  }
 };
 
 const readImage = (file) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result).split(",")[1]); reader.onerror = () => reject(new Error("Não foi possível ler a imagem.")); reader.readAsDataURL(file); });
@@ -46,7 +68,8 @@ const uploadImage = async (file) => {
   return readJson(await fetch("/api/upload", { method: "POST", headers: authHeaders(true), body: JSON.stringify({ image: await readImage(file), name: file.name }) }));
 };
 
-$("token").addEventListener("input", () => { $("token-state").textContent = $("token").value ? "Token preenchido" : "Aguardando autenticação"; if ($("token").value.length > 10) loadContent().catch(() => {}); });
+$("token").addEventListener("input", () => { $("token-state").textContent = $("token").value ? "Clique em entrar para carregar os dados." : "Aguardando autenticação"; $("token-state").classList.remove("ready"); });
+$("authenticate").addEventListener("click", authenticate);
 $("csv").addEventListener("change", (event) => { $("csv-label").textContent = event.target.files[0]?.name || "Escolher arquivo CSV"; });
 $("image").addEventListener("change", (event) => { $("image-label").textContent = event.target.files[0]?.name || "Escolher imagem"; });
 $("import").addEventListener("click", async () => {
@@ -79,4 +102,3 @@ $("announcement-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   try { await contentRequest({ tipo: "comunicado", titulo: $("announcement-title").value, texto: $("announcement-text").value, publicado: $("announcement-published").checked }); event.target.reset(); $("announcement-published").checked = true; message("announcement-message", "Comunicado salvo.", "success"); await loadContent(); } catch (error) { message("announcement-message", error.message, "error"); }
 });
-loadContent().catch(() => {});
