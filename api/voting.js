@@ -9,7 +9,8 @@ export default async function handler(req, res) {
     if (!/^\d{1,20}$/.test(ra) || !choice) return json(res, 400, { error: "Informe um RA válido e uma opção." });
     const db = getDb(), election = (await db.collection("config").doc("election").get()).data() || eleicao;
     const now = Date.now(), start = Date.parse(election.datas?.votacaoInicio || ""), end = Date.parse(election.datas?.votacaoFim || "");
-    if (election.status !== "votacao" || !Number.isFinite(start) || !Number.isFinite(end) || now < start || now > end) return json(res, 403, { error: "A votação não está aberta neste momento." });
+    const withinVotingWindow = Number.isFinite(start) && Number.isFinite(end) && now >= start && now <= end;
+    if (election.status !== "votacao" || election.votingEnabled !== true || (election.votingTestMode !== true && !withinVotingWindow)) return json(res, 403, { error: "A votação não está aberta neste momento." });
     const [voterRef, eligibleRef, voteRef] = [db.collection("voterParticipation").doc(raDigest(ra)), db.collection("eligibleVoters").doc(raDigest(ra)), db.collection("votes").doc()];
     const allowed = new Set(["branco", "nulo"]);
     (await db.collection("slates").where("status", "==", "habilitada").get()).forEach((doc) => allowed.add(doc.id));

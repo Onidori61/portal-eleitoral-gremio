@@ -4,6 +4,13 @@ const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&"
 const message = (id, text, type = "") => { const element = $(id); element.textContent = text; element.className = "form-message " + type; };
 const readJson = async (response) => { const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || "Falha na operação."); return data; };
 const formatDateTime = (value) => value ? new Date(value).toISOString().slice(0, 16) : "";
+const formatDateTimeInput = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(date).reduce((result, part) => { result[part.type] = part.value; return result; }, {});
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+};
 const setSummary = (id, value) => { const element = $(id); if (element) element.textContent = String(value); };
 const contentRequest = (body, method = "POST") => readJson(fetch("/api/admin/content", { method, headers: authHeaders(true), body: JSON.stringify(body) }));
 const footerFields = ["titulo", "subtitulo", "descricao", "endereco", "telefone", "email", "comissaoTitulo", "comissaoTexto"];
@@ -26,7 +33,9 @@ const loadElection = async () => {
   const election = data.election;
   $("election-status").value = election.status || "configuracao";
   $("status-publico").value = election.statusPublico || "";
-  ["inscricoesInicio", "inscricoesFim", "campanhaInicio", "campanhaFim", "votacaoInicio", "votacaoFim", "apuracao"].forEach((field) => { $(field).value = formatDateTime(election.datas?.[field]); });
+  $("voting-enabled").checked = election.votingEnabled === true;
+  $("voting-test-mode").checked = election.votingTestMode === true;
+  ["inscricoesInicio", "inscricoesFim", "campanhaInicio", "campanhaFim", "votacaoInicio", "votacaoFim", "apuracao"].forEach((field) => { $(field).value = formatDateTimeInput(election.datas?.[field]); });
   message("election-message", "Configuração carregada.", "success");
 };
 
@@ -107,7 +116,7 @@ $("election-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const dates = {};
   ["inscricoesInicio", "inscricoesFim", "campanhaInicio", "campanhaFim", "votacaoInicio", "votacaoFim", "apuracao"].forEach((field) => { dates[field] = $(field).value ? new Date($(field).value).toISOString() : ""; });
-  try { await readJson(await fetch("/api/admin/election", { method: "PATCH", headers: authHeaders(true), body: JSON.stringify({ status: $("election-status").value, statusPublico: $("status-publico").value, datas: dates }) })); message("election-message", "Controle da eleição salvo.", "success"); } catch (error) { message("election-message", error.message, "error"); }
+  try { await readJson(await fetch("/api/admin/election", { method: "PATCH", headers: authHeaders(true), body: JSON.stringify({ status: $("election-status").value, statusPublico: $("status-publico").value, votingEnabled: $("voting-enabled").checked, votingTestMode: $("voting-test-mode").checked, datas: dates }) })); message("election-message", "Controle da eleição salvo.", "success"); } catch (error) { message("election-message", error.message, "error"); }
 });
 $("document-form").addEventListener("submit", async (event) => {
   event.preventDefault();

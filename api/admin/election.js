@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     const dates = validateDates({ ...(current.datas || {}), ...(body.datas || {}) });
     if (status === "votacao" && (!dates.votacaoInicio || !dates.votacaoFim)) return json(res, 400, { error: "Defina o início e o fim da votação antes de abrir o período." });
     if (dates.votacaoInicio && dates.votacaoFim && Date.parse(dates.votacaoFim) <= Date.parse(dates.votacaoInicio)) return json(res, 400, { error: "O fim da votação deve ser posterior ao início." });
-    await ref.set({ status, statusPublico: String(body.statusPublico || status), datas: dates, updatedAt: new Date().toISOString() }, { merge: true });
+    await ref.set({ status, statusPublico: String(body.statusPublico || status), votingEnabled: Boolean(body.votingEnabled), votingTestMode: Boolean(body.votingTestMode), datas: dates, updatedAt: new Date().toISOString() }, { merge: true });
     return json(res, 200, { updated: true });
   } catch (error) {
     console.error("Erro ao atualizar configuração da eleição:", error);

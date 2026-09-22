@@ -9,7 +9,14 @@ const api = async (path, options) => {
 const formatDate = (value) => {
   if (!value) return "A definir";
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "A definir" : new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeZone: "America/Sao_Paulo" }).format(date);
+  return Number.isNaN(date.getTime()) ? "A definir" : new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(date);
+};
+const formatDateTimeInput = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(date).reduce((result, part) => { result[part.type] = part.value; return result; }, {});
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
 };
 const dateKey = (key) => ({ inscricoesInicio: "Início das inscrições", inscricoesFim: "Fim das inscrições", campanhaInicio: "Início da campanha", campanhaFim: "Fim da campanha", votacaoInicio: "Início da votação", votacaoFim: "Fim da votação", apuracao: "Apuração" }[key] || key);
 const renderSlates = (slates) => {
@@ -17,7 +24,7 @@ const renderSlates = (slates) => {
   return slates.map((slate) => { const president = (slate.integrantes || []).find((member) => /presid|coordenação geral/i.test(member.cargo)); const vice = (slate.integrantes || []).find((member) => /vice/i.test(member.cargo)); return `<article class="slate-card">${slate.imagemUrl ? `<img class="slate-image" src="${escapeHtml(slate.imagemUrl)}" alt="Imagem da ${escapeHtml(slate.nome)}">` : ""}<span class="slate-number">Chapa ${escapeHtml(String(slate.numero))}</span><h3>${escapeHtml(slate.nome)}</h3><p class="slate-summary">${escapeHtml(slate.apresentacao || "Informações públicas da chapa ainda não foram adicionadas.")}</p><div class="slate-leaders"><span><small>Presidência</small><strong>${escapeHtml(president?.nome || "A informar")}</strong></span><span><small>Vice-presidência</small><strong>${escapeHtml(vice?.nome || "A informar")}</strong></span></div><a class="slate-more" href="/chapa?id=${encodeURIComponent(slate.id)}">Ver informações completas <span aria-hidden="true">→</span></a></article>`; }).join("");
 };
 const renderRules = (texts) => [texts.eleicao.quemPodeVotar, texts.eleicao.quemPodeSerCandidato, texts.eleicao.comoVotar, texts.eleicao.comoRaEUsado, texts.eleicao.apuracao].map((text, index) => `<article class="rule-card"><span class="rule-index">0${index + 1}</span><h3>${["Quem pode votar", "Quem pode ser candidato", "Como é o voto", "Como o RA é usado", "Apuração"][index]}</h3><p>${escapeHtml(text)}</p></article>`).join("");
-const renderCalendar = (dates) => Object.entries(dates).map(([key, value]) => `<article class="timeline-item ${value ? "is-defined" : ""}"><time>${escapeHtml(formatDate(value))}</time><strong>${escapeHtml(dateKey(key))}</strong><span>${value ? "Data oficial cadastrada" : "Data a definir pela Comissão"}</span></article>`).join("");
+const renderCalendar = (dates) => Object.entries(dates).map(([key, value]) => `<article class="timeline-item ${value ? "is-defined" : ""}"><time>${escapeHtml(formatDate(value))}</time><strong>${escapeHtml(dateKey(key))}</strong></article>`).join("");
 const statuteUrl = "https://docs.google.com/document/d/154zRk2niV64O-Lacm4dVLfmr7R5ySSsX/edit?usp=sharing&ouid=114036570556280466312&rtpof=true&sd=true";
 const renderDocuments = (documents) => [`<a class="document-item document-item-featured" href="${statuteUrl}" target="_blank" rel="noopener noreferrer"><span class="document-icon material-symbols-outlined">picture_as_pdf</span><strong>Estatuto completo do Grêmio</strong><span>Consultar ↗</span></a>`, ...(documents || []).map((doc) => `<a class="document-item" href="${escapeHtml(doc.arquivo)}" target="_blank" rel="noopener noreferrer"><span class="document-icon material-symbols-outlined">picture_as_pdf</span><strong>${escapeHtml(doc.titulo)}</strong><span>${escapeHtml(doc.categoria || "Abrir")} ↗</span></a>`)].join("");
 const renderAnnouncements = (items) => items.length ? items.map((item) => `<article class="announcement-card"><h3>${escapeHtml(item.titulo)}</h3><p>${escapeHtml(item.texto)}</p></article>`).join("") : '<p class="empty-state">Nenhum comunicado publicado.</p>';
@@ -66,9 +73,15 @@ const render = (data) => {
   $("calendar").innerHTML = renderCalendar(election.datas);
   $("documents").innerHTML = renderDocuments(data.content.documentos);
   $("announcements").innerHTML = renderAnnouncements(data.announcements || []);
-  if (election.status === "votacao") {
-    $("vote-form").hidden = false;
-    $("vote-help").textContent = "A votação está aberta. Informe seu RA e escolha uma opção.";
+  const start = Date.parse(election.datas?.votacaoInicio || ""), end = Date.parse(election.datas?.votacaoFim || ""), withinWindow = Number.isFinite(start) && Number.isFinite(end) && Date.now() >= start && Date.now() <= end;
+  const votingOpen = election.status === "votacao" && election.votingEnabled === true && (election.votingTestMode === true || withinWindow);
+  const votingEnded = election.datas?.votacaoFim && Date.now() > Date.parse(election.datas.votacaoFim);
+  $("vote-panel").classList.toggle("vote-panel-locked", !votingOpen);
+  $("vote-form").hidden = !votingOpen;
+  $("vote-locked-message").hidden = votingOpen;
+  $("vote-locked-message").textContent = votingEnded || election.status === "encerrada" ? "A votação foi encerrada. Consulte o calendário e os comunicados para acompanhar a apuração." : "A votação não está aberta. Consulte o calendário para saber quando ela estará disponível.";
+  $("vote-help").textContent = votingOpen ? "A votação está aberta. Informe seu RA e escolha uma opção." : "A votação só fica disponível durante o período oficial.";
+  if (votingOpen) {
     renderBallot(data.slates || []);
   }
 };
@@ -89,6 +102,16 @@ $("vote-form").addEventListener("submit", async (event) => {
     message.textContent = result.message;
     event.target.reset();
   } catch (error) { message.textContent = error.message; }
+});
+$("vote-panel").addEventListener("click", (event) => {
+  if (!$("vote-panel").classList.contains("vote-panel-locked") || event.target.closest("a")) return;
+  const notice = document.createElement("div");
+  notice.className = "vote-click-notice";
+  notice.textContent = "A votação ainda não está disponível. Verifique o calendário.";
+  notice.style.left = `${Math.min(event.clientX, window.innerWidth - 290)}px`;
+  notice.style.top = `${Math.min(event.clientY, window.innerHeight - 80)}px`;
+  document.body.append(notice);
+  window.setTimeout(() => { notice.remove(); document.querySelector("#calendario")?.scrollIntoView({ behavior: "smooth", block: "start" }); }, 4000);
 });
 $("menu-toggle").addEventListener("click", () => {
   const isOpen = $("main-nav").classList.toggle("open");
