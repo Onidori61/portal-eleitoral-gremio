@@ -6,6 +6,15 @@ export const firebaseConfigured = Boolean(
     process.env.FIREBASE_PRIVATE_KEY
 );
 
+const normalizePrivateKey = (value) => {
+    const trimmed = String(value).trim();
+    const unquoted = trimmed
+        .replace(/^"(.*)"$/s, "$1")
+        .replace(/^'(.*)'$/s, "$1");
+
+    return unquoted.replace(/\\n/g, "\n").replace(/\r\n/g, "\n").trim();
+};
+
 export const getDb = () => {
     if (!firebaseConfigured) {
         throw new Error(
@@ -18,7 +27,7 @@ export const getDb = () => {
             credential: admin.credential.cert({
                 projectId: process.env.FIREBASE_PROJECT_ID,
                 clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
+                privateKey: normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY)
             })
         });
     }

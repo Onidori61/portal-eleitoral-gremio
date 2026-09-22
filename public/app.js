@@ -1,35 +1,79 @@
-import escola from "../config/escola.js";
-import eleicao from "../config/eleicao.js";
-import cargos from "../config/cargos.js";
-import textos from "../content/textos.js";
-import documentos from "../content/documentos.js";
-
 const $ = (id) => document.getElementById(id);
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
 const api = async (path, options) => {
   const response = await fetch(path, options);
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body.error || "Não foi possível concluir a operação.");
   return body;
 };
-const formatDate = (value) => value ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeZone: "America/Sao_Paulo" }).format(new Date(value)) : "A definir pela Comissão";
-const render = (data) => {
-  $("school").textContent = `${escola.nome} — ${escola.cidade}/${escola.estado}`;
-  $("footer-school").textContent = escola.nome;
-  $("title").textContent = textos.inicio.titulo;
-  $("subtitle").textContent = textos.inicio.subtitulo;
-  $("about").textContent = textos.inicio.sobre;
-  $("chapas-title").textContent = textos.chapas.titulo;
-  $("chapas-description").textContent = textos.chapas.descricao;
-  $("status").textContent = `Status da eleição: ${data.election?.statusPublico || "informações em atualização"}.`;
-  $("slates").innerHTML = (data.slates || []).map((slate) => `<article class="card"><h3>${escapeHtml(slate.nome)}</h3><p>Chapa ${escapeHtml(String(slate.numero))}</p><p>${escapeHtml(slate.apresentacao || "")}</p></article>`).join("") || "<p>Nenhuma chapa habilitada foi publicada.</p>";
-  $("rules").innerHTML = [textos.eleicao.introducao, textos.eleicao.quemPodeVotar, textos.eleicao.quemPodeSerCandidato, textos.eleicao.comoVotar, textos.eleicao.comoRaEUsado, textos.eleicao.apuracao].map((text) => `<p>${escapeHtml(text)}</p>`).join("");
-  $("calendar").innerHTML = Object.entries(eleicao.datas).map(([key, value]) => `<article><time>${escapeHtml(key)}</time><div>${formatDate(value)}</div></article>`).join("");
-  $("documents").innerHTML = documentos.map((doc) => `<article class="card"><h3>${escapeHtml(doc.titulo)}</h3><a href="${escapeAttr(doc.arquivo)}">Abrir documento</a></article>`).join("") || "<p>A Comissão ainda não publicou documentos.</p>";
-  $("announcements").innerHTML = (data.announcements || []).map((item) => `<article class="card"><h3>${escapeHtml(item.titulo)}</h3><p>${escapeHtml(item.texto)}</p></article>`).join("") || "<p>Nenhum comunicado publicado.</p>";
-  if (data.election?.status === "votacao") { $("vote-form").hidden = false; $("vote-help").textContent = "Informe seu RA e escolha uma opção. O voto é secreto."; renderBallot(data.slates || []); }
+const formatDate = (value) => {
+  if (!value) return "A definir";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "A definir" : new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeZone: "America/Sao_Paulo" }).format(date);
 };
-const renderBallot = (slates) => { $("ballot").innerHTML = [...slates.map((s) => `<label><input type="radio" name="choice" value="${escapeAttr(String(s.id))}" required> Chapa ${escapeHtml(String(s.numero))} — ${escapeHtml(s.nome)}</label>`), eleicao.votacao.permiteBranco ? '<label><input type="radio" name="choice" value="branco"> Voto em branco</label>' : "", eleicao.votacao.permiteNulo ? '<label><input type="radio" name="choice" value="nulo"> Voto nulo</label>' : ""].join(""); };
-const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
-const escapeAttr = escapeHtml;
-try { render(await api("/api/public")); } catch (error) { $("status").textContent = error.message; }
-$("vote-form").addEventListener("submit", async (event) => { event.preventDefault(); const choice = document.querySelector('input[name="choice"]:checked')?.value; try { const result = await api("/api/voting", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ra: $("ra").value, choice }) }); $("vote-message").textContent = result.message; event.target.reset(); } catch (error) { $("vote-message").textContent = error.message; } });
+const dateKey = (key) => ({ inscricoesInicio: "Início das inscrições", inscricoesFim: "Fim das inscrições", campanhaInicio: "Início da campanha", campanhaFim: "Fim da campanha", votacaoInicio: "Início da votação", votacaoFim: "Fim da votação", apuracao: "Apuração" }[key] || key);
+const renderSlates = (slates) => {
+  if (!slates.length) return '<p class="empty-state">Nenhuma chapa habilitada foi publicada pela Comissão Eleitoral.</p>';
+  return slates.map((slate) => `<article class="slate-card">${slate.imagemUrl ? `<img class="slate-image" src="${escapeHtml(slate.imagemUrl)}" alt="Imagem da ${escapeHtml(slate.nome)}">` : ""}<span class="slate-number">Chapa ${escapeHtml(String(slate.numero))}</span><h3>${escapeHtml(slate.nome)}</h3><p>${escapeHtml(slate.apresentacao || "Informações públicas da chapa ainda não foram adicionadas.")}</p><details><summary>Ver composição e propostas</summary><p>${(slate.integrantes || []).map((member) => `${escapeHtml(member.cargo)}: ${escapeHtml(member.nome)} (${escapeHtml(member.turma)})`).join("<br>")}</p><p>${(slate.propostas || []).map((proposal) => `<strong>${escapeHtml(proposal.titulo)}</strong>: ${escapeHtml(proposal.descricao)}`).join("<br>")}</p></details></article>`).join("");
+};
+const renderRules = (texts) => [texts.eleicao.quemPodeVotar, texts.eleicao.quemPodeSerCandidato, texts.eleicao.comoVotar, texts.eleicao.comoRaEUsado, texts.eleicao.apuracao].map((text, index) => `<article class="rule-card"><span class="rule-index">0${index + 1}</span><h3>${["Quem pode votar", "Quem pode ser candidato", "Como é o voto", "Como o RA é usado", "Apuração"][index]}</h3><p>${escapeHtml(text)}</p></article>`).join("");
+const renderCalendar = (dates) => Object.entries(dates).map(([key, value]) => `<article class="timeline-item ${value ? "is-defined" : ""}"><time>${escapeHtml(formatDate(value))}</time><strong>${escapeHtml(dateKey(key))}</strong><span>${value ? "Data oficial cadastrada" : "Data a definir pela Comissão"}</span></article>`).join("");
+const renderDocuments = (documents) => documents.length ? documents.map((doc) => `<a class="document-item" href="${escapeHtml(doc.arquivo)}"><strong>${escapeHtml(doc.titulo)}</strong><span> Abrir ↗</span></a>`).join("") : '<p class="empty-state">A Comissão ainda não publicou documentos.</p>';
+const renderAnnouncements = (items) => items.length ? items.map((item) => `<article class="announcement-card"><h3>${escapeHtml(item.titulo)}</h3><p>${escapeHtml(item.texto)}</p></article>`).join("") : '<p class="empty-state">Nenhum comunicado publicado.</p>';
+const renderBallot = (slates) => {
+  const choices = slates.map((slate) => `<label><input type="radio" name="choice" value="${escapeHtml(String(slate.id))}" required><span>Chapa ${escapeHtml(String(slate.numero))} — ${escapeHtml(slate.nome)}</span></label>`);
+  if (window.electionConfig.votacao.permiteBranco) choices.push('<label><input type="radio" name="choice" value="branco"><span>Voto em branco</span></label>');
+  if (window.electionConfig.votacao.permiteNulo) choices.push('<label><input type="radio" name="choice" value="nulo"><span>Voto nulo</span></label>');
+  $("ballot").innerHTML = choices.join("");
+};
+const render = (data) => {
+  const school = data.school;
+  const election = data.election;
+  const texts = data.content.textos;
+  window.electionConfig = election;
+  const schoolName = `${school.nome} — ${school.cidade}/${school.estado}`;
+  $("school").textContent = schoolName;
+  $("brand-school").textContent = school.nome;
+  $("footer-school").textContent = school.nome;
+  $("footer-year").textContent = election.ano;
+  $("election-year").textContent = election.ano;
+  $("title").textContent = texts.inicio.titulo;
+  $("subtitle").textContent = texts.inicio.subtitulo;
+  $("about").textContent = texts.inicio.sobre;
+  $("chapas-title").textContent = texts.chapas.titulo;
+  $("chapas-description").textContent = texts.chapas.descricao;
+  $("status").textContent = election.statusPublico || "Informações em atualização";
+  $("slates").innerHTML = renderSlates(data.slates || []);
+  $("rules").innerHTML = renderRules(texts);
+  $("calendar").innerHTML = renderCalendar(election.datas);
+  $("documents").innerHTML = renderDocuments(data.content.documentos);
+  $("announcements").innerHTML = renderAnnouncements(data.announcements || []);
+  if (election.status === "votacao") {
+    $("vote-form").hidden = false;
+    $("vote-help").textContent = "A votação está aberta. Informe seu RA e escolha uma opção.";
+    renderBallot(data.slates || []);
+  }
+};
+try {
+  render(await api("/api/public"));
+} catch (error) {
+  console.error("Falha ao carregar o portal:", error);
+  $("status").textContent = "Não foi possível carregar o status agora.";
+  $("slates").innerHTML = '<p class="empty-state">Tente novamente em alguns instantes.</p>';
+}
+$("vote-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const choice = document.querySelector('input[name="choice"]:checked')?.value;
+  const message = $("vote-message");
+  message.textContent = "Registrando seu voto...";
+  try {
+    const result = await api("/api/voting", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ra: $("ra").value, choice }) });
+    message.textContent = result.message;
+    event.target.reset();
+  } catch (error) { message.textContent = error.message; }
+});
+$("menu-toggle").addEventListener("click", () => {
+  const isOpen = $("main-nav").classList.toggle("open");
+  $("menu-toggle").setAttribute("aria-expanded", String(isOpen));
+});
+document.querySelectorAll(".main-nav a").forEach((link) => link.addEventListener("click", () => $("main-nav").classList.remove("open")));

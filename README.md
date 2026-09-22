@@ -37,8 +37,30 @@ envia `image`, `name` e `expiration` via POST para
 ```bash
 npm install
 npm run validate
-npm run dev
+npm start
 ```
 
 Sem Firebase configurado, o portal exibe honestamente o estado “configuração” e
 não aceita votos; não há dados simulados ou credenciais embutidas.
+
+## Fluxo de chapas
+
+Estudantes usam `/inscricao.html` para enviar nome, apresentação, os oito cargos,
+integrantes, propostas e redes sociais. A inscrição é gravada como `pendente` na
+coleção `slates` e não é publicada automaticamente.
+
+A Comissão acessa `/hub.html`, informa o `COMMISSION_API_TOKEN`, abre
+**Inscrições pendentes**, confere os dados, envia a imagem aprovada pelo ImgBB,
+atribui o número e escolhe **Habilitar** ou **Indeferir**. Somente chapas
+habilitadas aparecem no portal público.
+
+No mesmo Hub, a Comissão pode carregar e salvar a configuração da eleição:
+
+- `configuração`, `inscrições abertas`, `campanha`, `votação aberta`,
+  `apuração` ou `encerrada`;
+- status público exibido no portal;
+- início e fim da votação.
+
+Para abrir a votação, o sistema exige as duas datas. Para editar uma chapa,
+carregue a lista, altere nome/apresentação/número e salve; a mudança é persistida
+no Firestore e refletida no portal público quando a chapa estiver habilitada.

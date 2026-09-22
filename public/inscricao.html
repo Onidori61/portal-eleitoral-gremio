@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Inscrição de chapa para o processo eleitoral">
+  <title>Inscrever chapa | Portal Eleitoral</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="hub-body">
+  <header class="site-header"><div class="container header-inner"><a class="brand" href="/"><span class="brand-mark">G</span><span><strong>Grêmio</strong><small>Inscrição de chapa</small></span></a><a class="button button-quiet hub-back" href="/">← Voltar ao portal</a></div></header>
+  <main class="hub-main"><div class="container inscription-container">
+    <div class="hub-intro"><p class="section-kicker">Participação estudantil</p><h1>Inscreva sua chapa <span>para a eleição.</span></h1><p>Preencha os dados abaixo. A inscrição será analisada pela Comissão Eleitoral antes de aparecer no portal público.</p></div>
+    <form id="registration-form" class="registration-form">
+      <section class="form-card"><div class="form-card-heading"><span>01</span><div><h2>Identificação</h2><p>Como sua chapa será apresentada.</p></div></div><label for="name">Nome da chapa</label><input id="name" name="name" required maxlength="100" placeholder="Ex.: Chapa Renovação"><label for="presentation">Apresentação</label><textarea id="presentation" name="presentation" rows="4" required maxlength="1000" placeholder="Conte brevemente quem vocês são e o que defendem."></textarea></section>
+      <section class="form-card"><div class="form-card-heading"><span>02</span><div><h2>Composição da chapa</h2><p>Os oito cargos devem ser preenchidos. O número será atribuído pela Comissão.</p></div></div><div id="members" class="member-list"></div></section>
+      <section class="form-card"><div class="form-card-heading"><span>03</span><div><h2>Propostas</h2><p>Organize as ideias por categoria para facilitar a leitura pública.</p></div></div><div id="proposals" class="proposal-list"></div><button class="button button-quiet add-member" id="add-proposal" type="button">+ Adicionar proposta</button></section>
+      <section class="form-card"><div class="form-card-heading"><span>04</span><div><h2>Redes e imagem</h2><p>Campos opcionais. A imagem será conferida e publicada pela Comissão.</p></div></div><div id="socials" class="social-list"></div><button class="button button-quiet add-member" id="add-social" type="button">+ Adicionar rede social</button><label for="image-note">Imagem/logo da chapa</label><p class="field-help">A imagem não é enviada diretamente nesta etapa. Após a análise, a Comissão poderá fazer o upload da imagem aprovada pelo Hub.</p><input id="image-note" maxlength="200" placeholder="Observação sobre a imagem (opcional)"></section>
+      <section class="form-card declaration"><label class="check-label"><input id="declaration" type="checkbox" required><span>Declaro que as informações enviadas são verdadeiras e que a chapa está ciente de que a Comissão Eleitoral fará a análise conforme o edital e o regimento.</span></label><button class="button button-primary button-full" type="submit">Enviar inscrição para análise <span>→</span></button><p id="registration-message" class="form-message" role="status" aria-live="polite"></p></section>
+    </form>
+  </div></main>
+  <script type="module" src="/inscricao.js"></script>
+</body>
+</html>

@@ -3,30 +3,109 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Portal Eleitoral do Grêmio Estudantil">
-  <title>Portal Eleitoral</title>
+  <meta name="description" content="Portal oficial do processo eleitoral do Grêmio Estudantil">
+  <title>Portal Eleitoral | Grêmio Estudantil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="/">Grêmio Estudantil</a>
-    <nav aria-label="Navegação principal">
-      <a href="/">Início</a><a href="#chapas">Chapas</a><a href="#como-funciona">Como funciona</a>
-      <a href="#calendario">Calendário</a><a href="#documentos">Documentos</a><a href="#comunicados">Comunicados</a>
-      <a class="button small" href="#votar">Votar</a>
-    </nav>
+    <div class="container header-inner">
+      <a class="brand" href="/" aria-label="Página inicial">
+        <span class="brand-mark" aria-hidden="true">G</span>
+        <span><strong>Grêmio</strong><small id="brand-school">Portal eleitoral</small></span>
+      </a>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav">Menu</button>
+      <nav id="main-nav" class="main-nav" aria-label="Navegação principal">
+        <a class="active" href="#inicio">Início</a>
+        <a href="#chapas">Chapas</a>
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#calendario">Calendário</a>
+        <a href="#documentos">Documentos</a>
+        <a href="#comunicados">Comunicados</a>
+        <a href="/inscricao.html">Inscrever chapa</a>
+        <a class="nav-cta" href="#votar">Votar</a>
+      </nav>
+    </div>
   </header>
+
   <main id="app">
-    <section class="hero"><p class="eyebrow" id="school"></p><h1 id="title"></h1><p id="subtitle"></p><a class="button" href="#chapas">Conhecer as chapas</a></section>
-    <section class="section"><h2>Sobre a eleição</h2><p id="about"></p><div class="status" id="status">Carregando status...</div></section>
-    <section class="section" id="chapas"><h2 id="chapas-title"></h2><p id="chapas-description"></p><div class="cards" id="slates"></div></section>
-    <section class="section" id="como-funciona"><h2>Como funciona</h2><div id="rules" class="prose"></div></section>
-    <section class="section" id="calendario"><h2>Calendário oficial</h2><div id="calendar" class="timeline"></div></section>
-    <section class="section" id="documentos"><h2>Documentos</h2><div id="documents" class="cards"></div></section>
-    <section class="section" id="comunicados"><h2>Comunicados</h2><div id="announcements"></div></section>
-    <section class="section voting" id="votar"><h2>Votação</h2><p id="vote-help">A votação só fica disponível durante a janela oficial.</p><form id="vote-form" hidden><label for="ra">RA</label><input id="ra" inputmode="numeric" autocomplete="off" required pattern="[0-9]{1,20}"><div id="ballot"></div><button class="button" type="submit">Registrar voto</button></form><p id="vote-message" role="status"></p></section>
+    <section id="inicio" class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="eyebrow-dot"></span><span id="school">Carregando escola...</span></p>
+          <h1 id="title">Portal Eleitoral do Grêmio Estudantil</h1>
+          <p class="hero-lead" id="subtitle">Informações, chapas, propostas, calendário e votação em um só lugar.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#chapas">Conhecer as chapas <span aria-hidden="true">→</span></a>
+            <a class="button button-quiet" href="#como-funciona">Entender o processo</a>
+          </div>
+        </div>
+        <div class="hero-card" aria-label="Status da eleição">
+          <div class="hero-card-top"><span class="live-dot"></span><span>Processo eleitoral</span><span class="hero-year" id="election-year"></span></div>
+          <div class="hero-card-icon" aria-hidden="true">✦</div>
+          <p class="hero-card-label">Status atual</p>
+          <strong id="status">Carregando status...</strong>
+          <p>Acompanhe nesta página cada etapa oficial da eleição.</p>
+          <a href="#calendario">Ver calendário <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+      <div class="hero-shape shape-one"></div><div class="hero-shape shape-two"></div>
+    </section>
+
+    <section class="intro-section">
+      <div class="container intro-grid">
+        <div><p class="section-kicker">Sobre o processo</p><h2>Participação que transforma a escola.</h2></div>
+        <div><p class="intro-text" id="about"></p><p class="muted">As regras oficiais são definidas pelo Estatuto do Grêmio, pelo edital e pelo regimento eleitoral.</p></div>
+      </div>
+    </section>
+
+    <section id="chapas" class="section section-muted">
+      <div class="container">
+        <div class="section-heading"><div><p class="section-kicker">Conheça as candidaturas</p><h2 id="chapas-title">Chapas</h2></div><p id="chapas-description"></p></div>
+        <div class="cards slate-grid" id="slates"></div>
+      </div>
+    </section>
+
+    <section id="como-funciona" class="section">
+      <div class="container">
+        <div class="section-heading"><div><p class="section-kicker">Informação transparente</p><h2>Como funciona</h2></div><p>Entenda as regras antes de participar.</p></div>
+        <div class="rules-grid" id="rules"></div>
+      </div>
+    </section>
+
+    <section id="calendario" class="section section-dark">
+      <div class="container">
+        <div class="section-heading light"><div><p class="section-kicker">Acompanhe as etapas</p><h2>Calendário oficial</h2></div><p>As datas seguem os documentos publicados pela Comissão Eleitoral.</p></div>
+        <div class="timeline" id="calendar"></div>
+      </div>
+    </section>
+
+    <section id="documentos" class="section">
+      <div class="container two-column-sections">
+        <div><p class="section-kicker">Transparência</p><h2>Documentos oficiais</h2><p class="muted">Consulte as versões mais recentes dos documentos do processo.</p></div>
+        <div class="document-list" id="documents"></div>
+      </div>
+    </section>
+
+    <section id="comunicados" class="section section-muted">
+      <div class="container">
+        <div class="section-heading"><div><p class="section-kicker">Avisos da Comissão</p><h2>Comunicados</h2></div></div>
+        <div class="announcement-grid" id="announcements"></div>
+      </div>
+    </section>
+
+    <section id="votar" class="vote-section">
+      <div class="container vote-grid">
+        <div><p class="section-kicker">Sua voz importa</p><h2>Participe da eleição.</h2><p>Quando a votação estiver aberta, informe seu RA e escolha uma opção. Seu voto é direto e secreto.</p><div class="privacy-note"><span aria-hidden="true">✓</span><span>O RA é usado somente para validar sua participação. A escolha não é armazenada junto dele.</span></div></div>
+        <div class="vote-panel"><div class="panel-heading"><span class="panel-number">01</span><h3>Votação online</h3></div><p id="vote-help">A votação só fica disponível durante a janela oficial.</p><form id="vote-form" hidden><label for="ra">Seu RA</label><input id="ra" inputmode="numeric" autocomplete="off" maxlength="20" placeholder="Digite apenas números" required pattern="[0-9]{1,20}"><fieldset><legend>Escolha uma opção</legend><div id="ballot" class="ballot"></div></fieldset><button class="button button-primary button-full" type="submit">Confirmar meu voto <span aria-hidden="true">→</span></button></form><p class="form-message" id="vote-message" role="status" aria-live="polite"></p></div>
+      </div>
+    </section>
   </main>
-  <footer><span id="footer-school"></span><span>Portal subordinado ao edital, regimento e decisões da Comissão Eleitoral.</span></footer>
+
+  <footer class="site-footer"><div class="container footer-grid"><div class="brand footer-brand"><span class="brand-mark" aria-hidden="true">G</span><span><strong id="footer-school">Grêmio Estudantil</strong><small>Portal eleitoral</small></span></div><p>Este portal apoia o processo eleitoral e não substitui os registros oficiais da Comissão.</p><div class="footer-bottom"><span>© <span id="footer-year"></span> · Processo eleitoral</span><a href="#inicio">Voltar ao topo ↑</a></div></div></footer>
   <script type="module" src="/app.js"></script>
 </body>
 </html>
