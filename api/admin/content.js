@@ -9,13 +9,15 @@ export default async function handler(req, res) {
   try {
     const db = getDb();
     if (req.method === "GET") {
-      const [documents, announcements] = await Promise.all([
+      const [documents, announcements, footer] = await Promise.all([
         db.collection("documents").get(),
-        db.collection("announcements").get()
+        db.collection("announcements").get(),
+        db.collection("config").doc("footer").get()
       ]);
       return json(res, 200, {
         documents: documents.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-        announcements: announcements.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+        announcements: announcements.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+        footer: footer.exists ? footer.data() : null
       });
     }
 
@@ -28,6 +30,22 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "PATCH") {
+      if (body.tipo === "footer") {
+        const footer = {
+          titulo: text(body.titulo, 120),
+          subtitulo: text(body.subtitulo, 180),
+          descricao: text(body.descricao, 600),
+          endereco: text(body.endereco, 240),
+          telefone: text(body.telefone, 120),
+          email: text(body.email, 160),
+          comissaoTitulo: text(body.comissaoTitulo, 120),
+          comissaoTexto: text(body.comissaoTexto, 600),
+          atualizadoEm: new Date().toISOString()
+        };
+        if (!footer.titulo || !footer.descricao || !footer.comissaoTitulo || !footer.comissaoTexto) return json(res, 400, { error: "Preencha os textos obrigatórios do footer." });
+        await db.collection("config").doc("footer").set(footer, { merge: true });
+        return json(res, 200, { updated: true, footer });
+      }
       const collection = body.tipo === "documento" ? "documents" : body.tipo === "comunicado" ? "announcements" : "";
       if (!collection || !body.id) return json(res, 400, { error: "Item inválido." });
       const data = { atualizadoEm: new Date().toISOString() };

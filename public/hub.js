@@ -6,6 +6,20 @@ const readJson = async (response) => { const data = await response.json().catch(
 const formatDateTime = (value) => value ? new Date(value).toISOString().slice(0, 16) : "";
 const setSummary = (id, value) => { const element = $(id); if (element) element.textContent = String(value); };
 const contentRequest = (body, method = "POST") => readJson(fetch("/api/admin/content", { method, headers: authHeaders(true), body: JSON.stringify(body) }));
+const footerFields = ["titulo", "subtitulo", "descricao", "endereco", "telefone", "email", "comissaoTitulo", "comissaoTexto"];
+const setFooterEditor = (footer = {}) => {
+  footerFields.forEach((field) => { const element = document.querySelector(`[data-footer-field="${field}"]`); if (element) element.textContent = footer[field] || ""; });
+};
+const loadFooter = async () => {
+  const data = await readJson(await fetch("/api/admin/content", { headers: authHeaders() }));
+  setFooterEditor(data.footer || {});
+  $("footer-editor").hidden = false;
+};
+const saveFooter = async () => {
+  const body = { tipo: "footer" };
+  footerFields.forEach((field) => { body[field] = document.querySelector(`[data-footer-field="${field}"]`)?.textContent.trim() || ""; });
+  try { await contentRequest(body, "PATCH"); message("footer-message", "Footer salvo. A página pública usará o novo conteúdo.", "success"); } catch (error) { message("footer-message", error.message, "error"); }
+};
 
 const loadElection = async () => {
   const data = await readJson(await fetch("/api/admin/election", { headers: authHeaders() }));
@@ -53,7 +67,7 @@ const authenticate = async () => {
   }
   $("token-state").textContent = "Carregando dados...";
   try {
-    await Promise.all([loadElection(), loadSlates(), loadContent()]);
+    await Promise.all([loadElection(), loadSlates(), loadContent(), loadFooter()]);
     $("token-state").textContent = "Acesso confirmado nesta sessão.";
     $("token-state").classList.add("ready");
   } catch (error) {
@@ -70,6 +84,7 @@ const uploadImage = async (file) => {
 
 $("token").addEventListener("input", () => { $("token-state").textContent = $("token").value ? "Clique em entrar para carregar os dados." : "Aguardando autenticação"; $("token-state").classList.remove("ready"); });
 $("authenticate").addEventListener("click", authenticate);
+$("save-footer").addEventListener("click", saveFooter);
 $("csv").addEventListener("change", (event) => { $("csv-label").textContent = event.target.files[0]?.name || "Escolher arquivo CSV"; });
 $("image").addEventListener("change", (event) => { $("image-label").textContent = event.target.files[0]?.name || "Escolher imagem"; });
 $("import").addEventListener("click", async () => {

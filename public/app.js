@@ -21,6 +21,18 @@ const renderCalendar = (dates) => Object.entries(dates).map(([key, value]) => `<
 const statuteUrl = "https://docs.google.com/document/d/154zRk2niV64O-Lacm4dVLfmr7R5ySSsX/edit?usp=sharing&ouid=114036570556280466312&rtpof=true&sd=true";
 const renderDocuments = (documents) => [`<a class="document-item document-item-featured" href="${statuteUrl}" target="_blank" rel="noopener noreferrer"><span class="document-icon material-symbols-outlined">picture_as_pdf</span><strong>Estatuto completo do Grêmio</strong><span>Consultar ↗</span></a>`, ...(documents || []).map((doc) => `<a class="document-item" href="${escapeHtml(doc.arquivo)}" target="_blank" rel="noopener noreferrer"><span class="document-icon material-symbols-outlined">picture_as_pdf</span><strong>${escapeHtml(doc.titulo)}</strong><span>${escapeHtml(doc.categoria || "Abrir")} ↗</span></a>`)].join("");
 const renderAnnouncements = (items) => items.length ? items.map((item) => `<article class="announcement-card"><h3>${escapeHtml(item.titulo)}</h3><p>${escapeHtml(item.texto)}</p></article>`).join("") : '<p class="empty-state">Nenhum comunicado publicado.</p>';
+const renderFooter = (footer, school) => {
+  const data = footer || {};
+  $("footer-school").textContent = data.titulo || school.nome;
+  $("footer-subtitle").textContent = data.subtitulo || "Portal eleitoral";
+  $("footer-description").textContent = data.descricao || "";
+  $("footer-address").textContent = data.endereco || "";
+  $("footer-phone").textContent = data.telefone || "";
+  $("footer-email").textContent = data.email ? ` · ${data.email}` : "";
+  $("footer-commission-title").textContent = data.comissaoTitulo || "Comissão Eleitoral";
+  $("footer-commission-text").textContent = data.comissaoTexto || "";
+  $("footer-school-bottom").textContent = data.titulo || school.nome;
+};
 const renderBallot = (slates) => {
   const choices = slates.map((slate) => `<label><input type="radio" name="choice" value="${escapeHtml(String(slate.id))}" required><span>Chapa ${escapeHtml(String(slate.numero))} — ${escapeHtml(slate.nome)}</span></label>`);
   if (window.electionConfig.votacao.permiteBranco) choices.push('<label><input type="radio" name="choice" value="branco"><span>Voto em branco</span></label>');
@@ -37,9 +49,7 @@ const render = (data) => {
   $("school-location").textContent = `${school.cidade}/${school.estado}`;
   $("school-type").textContent = school.tipo || "Informação oficial da escola";
   $("brand-school").textContent = school.nome;
-  $("footer-school").textContent = school.nome;
-  if ($("footer-school-full")) $("footer-school-full").textContent = school.nome;
-  if ($("footer-school-bottom")) $("footer-school-bottom").textContent = school.nome;
+  renderFooter(data.footer, school);
   $("footer-year").textContent = election.ano;
   $("election-year").textContent = election.ano;
   $("title").textContent = texts.inicio.titulo;
