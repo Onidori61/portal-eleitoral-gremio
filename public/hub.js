@@ -1,5 +1,5 @@
 const $ = (id) => document.getElementById(id);
-const authHeaders = (json = false) => ({ ...(json ? { "content-type": "application/json" } : {}), authorization: "Bearer " + $("token").value });
+const authHeaders = (json = false) => ({ ...(json ? { "content-type": "application/json" } : {}), authorization: "Bearer " + $("token").value.trim() });
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
 const message = (id, text, type = "") => { const element = $(id); element.textContent = text; element.className = "form-message " + type; };
 const readJson = async (response) => { const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || "Falha na operação."); return data; };
@@ -69,6 +69,7 @@ const loadContent = async () => {
 };
 
 const authenticate = async () => {
+  $("token").value = $("token").value.trim();
   if ($("token").value.length < 10) {
     $("token-state").textContent = "Cole um token válido para continuar.";
     $("token-state").classList.remove("ready");
