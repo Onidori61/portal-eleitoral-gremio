@@ -30,6 +30,6 @@ export default async function handler(req, res) {
     return json(res, 201, { id: record.id });
   } catch (error) {
     console.error("Erro ao receber inscrição de chapa:", error);
-    return json(res, 500, { error: "Não foi possível enviar a inscrição. Tente novamente." });
+    return json(res, 503, { error: "O cadastro está temporariamente indisponível. Tente novamente em alguns minutos." });
   }
 }

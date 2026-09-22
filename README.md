@@ -26,6 +26,11 @@ Environment Variables da Vercel. `IMGBB_API_KEY` fica exclusivamente em
 envia `image`, `name` e `expiration` via POST para
 `https://api.imgbb.com/1/upload` e retorna somente URLs públicas.
 
+Para o Firebase, a forma mais segura de evitar erro ao copiar quebras de linha
+é cadastrar na Vercel a variável `FIREBASE_SERVICE_ACCOUNT_JSON` com o conteúdo
+inteiro do arquivo JSON da conta de serviço. Nesse caso, não é preciso
+preencher `FIREBASE_PRIVATE_KEY`. Nunca coloque esse JSON no GitHub.
+
 ## Níveis de alteração
 
 - **Pode alterar:** `config/`, `content/`, `public/documentos/` e imagens.
