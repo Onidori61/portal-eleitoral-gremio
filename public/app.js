@@ -32,7 +32,9 @@ const render = (data) => {
   const texts = data.content.textos;
   window.electionConfig = election;
   const schoolName = `${school.nome} — ${school.cidade}/${school.estado}`;
-  $("school").textContent = schoolName;
+  if ($("school")) $("school").textContent = schoolName;
+  $("school-location").textContent = `${school.cidade}/${school.estado}`;
+  $("school-type").textContent = school.tipo || "Informação oficial da escola";
   $("brand-school").textContent = school.nome;
   $("footer-school").textContent = school.nome;
   $("footer-year").textContent = election.ano;
@@ -43,6 +45,9 @@ const render = (data) => {
   $("chapas-title").textContent = texts.chapas.titulo;
   $("chapas-description").textContent = texts.chapas.descricao;
   $("status").textContent = election.statusPublico || "Informações em atualização";
+  $("status-chip").textContent = election.status && election.status !== "configuracao" ? "EM ANDAMENTO" : "AGUARDANDO CONFIGURAÇÃO";
+  $("voting-date").textContent = election.datas?.votacaoInicio ? `${formatDate(election.datas.votacaoInicio)}${election.datas?.votacaoFim ? ` até ${formatDate(election.datas.votacaoFim)}` : ""}` : "A definir";
+  $("counting-date").textContent = formatDate(election.datas?.apuracao);
   $("slates").innerHTML = renderSlates(data.slates || []);
   $("rules").innerHTML = renderRules(texts);
   $("calendar").innerHTML = renderCalendar(election.datas);
@@ -76,4 +81,4 @@ $("menu-toggle").addEventListener("click", () => {
   const isOpen = $("main-nav").classList.toggle("open");
   $("menu-toggle").setAttribute("aria-expanded", String(isOpen));
 });
-document.querySelectorAll(".main-nav a").forEach((link) => link.addEventListener("click", () => $("main-nav").classList.remove("open")));
+document.querySelectorAll("#main-nav a").forEach((link) => link.addEventListener("click", () => $("main-nav").classList.remove("open")));
